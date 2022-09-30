@@ -16,6 +16,92 @@
  
 using namespace std;
 using namespace cv;
+
+void gammaCorrection(const cv::Mat &src, cv::Mat &dst, const float gamma)
+{
+    float invGamma = 1 / gamma;
+
+    cv::Mat table(1, 256, CV_8U);
+    uchar *p = table.ptr();
+    for (int i = 0; i < 256; ++i) {
+        p[i] = (uchar) (pow(i / 255.0, invGamma) * 255);
+    }
+
+    LUT(src, table, dst);
+}
+
+void GreyFilter(Mat image, int clientSocket){
+
+    Mat greyImg;
+
+    cvtColor(image,greyImg,COLOR_RGB2GRAY);
+
+    imshow("Grey Filter", greyImg);
+
+    int  imgSize = greyImg.total()*greyImg.elemSize();
+
+    // Echo message back to client
+    send(clientSocket, greyImg.data,  imgSize, 0);
+
+
+    
+
+}
+
+
+void GaussianFilter (cv::Mat image, int blurlvl, int clientSocket){
+
+    cv::Mat gaussianImg;
+
+    cv:: GaussianBlur(image,gaussianImg,cv::Size(blurlvl,blurlvl),0);
+
+    cv::imshow("Gaussian", gaussianImg);
+
+    int  imgSize = gaussianImg.total()*gaussianImg.elemSize();
+
+
+    // Echo message back to client
+    send(clientSocket, gaussianImg.data,  imgSize, 0);
+
+}
+
+//Bright filter operations
+
+void BrightFilter (cv::Mat image, int brillolvl, int clientSocket){
+
+    cv::Mat BrightImg;
+
+    image.convertTo(BrightImg,-1,2,brillolvl);
+
+    cv::imshow("Bright", BrightImg);
+
+    int  imgSize = BrightImg.total()*BrightImg.elemSize();
+
+    // Echo message back to client
+    send(clientSocket, BrightImg.data,  imgSize, 0);
+
+}
+
+//Gamma filter operations 
+
+void GammaFilter (cv::Mat image, int gammalvl,int clientSocket){
+
+    cv::Mat GammaImg;
+
+    gammaCorrection(image, GammaImg, gammalvl);
+
+    int  imgSize = GammaImg.total()*GammaImg.elemSize();
+
+
+    cv::imshow("Gamma", GammaImg);
+
+     // Echo message back to client
+    send(clientSocket, GammaImg.data,  imgSize, 0);
+
+}
+
+
+
  
 int main()
 {
@@ -72,14 +158,7 @@ int main()
     {
         memset(buf, 0, 4096);
 
-
-
-
- 
         // Wait for client to send data
-        //int bytesReceived = recv(clientSocket, buf, 4096, 0);
-
-
         Mat  img = Mat::zeros( 480,481, CV_8UC3);
         int  imgSize = img.total()*img.elemSize();
         uchar sockData[imgSize];
@@ -87,10 +166,13 @@ int main()
 
         //Receive data here
 
+       
+
         for (int i = 0; i < imgSize; i += bytes) {
-            if ((bytes = recv(clientSocket, sockData +i, imgSize  - i, 0)) == -1)  {
-                break;
-            }
+            
+                if ((bytes = recv(clientSocket, sockData +i, imgSize  - i, 0)) == -1)  {
+                    break;
+                }
         }
 
         // Assign pixel value to img
@@ -102,37 +184,27 @@ int main()
             }
         }
 
-        imshow("test",img);
 
-        waitKey(0);
+        GreyFilter(img,clientSocket);
+        GammaFilter(img,5,clientSocket);
+        BrightFilter(img,100,clientSocket);
+        GaussianFilter(img,45,clientSocket);
 
 
 
-
-        /*
-        if (bytesReceived == -1)
-        {
-            cerr << "Error in recv(). Quitting" << endl;
-            break;
-        }
+        cv::waitKey(0);
  
-        if (bytesReceived == 0)
-        {
-            cout << "Client disconnected " << endl;
-            break;
-        }*/
-        
- 
-        //cout << string(buf, 0, bytesReceived) << endl;
 
         cout << "prueba" << endl;
- 
-        // Echo message back to client
-        //send(clientSocket, buf, bytesReceived + 1, 0);
+
+
+    
+
     }
  
     // Close the socket
+
+
     close(clientSocket);
- 
     return 0;
 }

@@ -12,6 +12,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>
 
+#include <list>
+
 using namespace std;
 using namespace cv;
 
@@ -46,7 +48,7 @@ int main()
 
     //	While loop:
     char buf[4096];
-    string userInput;
+    
 
 
     
@@ -54,29 +56,24 @@ int main()
     do {
         //		Enter lines of text
 
+        
+        int filter;
 
-        cout << "> ";
-        getline(cin, userInput);
+        //user choose filter 
+
+        cout<< "Digite el filtro deseado \n  1.Filtro EScala de grises \n  2.Filtro Gaussian Blur \n  3.Correccion de Brillo \n  4.Correccion de Gamma \n  "; cin>>filter;
+
+
+
 
         //		Send to server
-
-
-
-
         Mat frame = imread("./Cat.jpg",IMREAD_COLOR);
 
         int  imgSize = frame.total()*frame.elemSize();
 
-       
-
-        //imshow("test",frame);
-
-        //waitKey(0);
-
 
         // Send data here
         int sendRes = send(sock, frame.data, imgSize, 0);
-
 
 
         if (sendRes == -1)
@@ -86,21 +83,44 @@ int main()
         }
 
 
-        /*//		Wait for response
         memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
-        if (bytesReceived == -1)
-        {
-            cout << "There was an error getting response from server\r\n";
+        
+
+        // Wait for server response
+
+        Mat  img = Mat::zeros( 480,481, CV_8UC3);
+        int  newimgSize = img.total()*img.elemSize();
+        uchar sockData[imgSize];
+        int bytes = 0;
+
+        //Receive data here
+
+       
+
+        for (int i = 0; i < newimgSize; i += bytes) {
+            
+                if ((bytes = recv(sock, sockData +i, newimgSize  - i, 0)) == -1)  {
+                    break;
+                }
         }
-        else
-        {
-            //		Display response
-            cout << "SERVER> " << string(buf, bytesReceived) << "\r\n";
-        }*/
+
+        // Assign pixel value to img
+        int ptr=0;
+        for (int i = 0;  i < img.rows; i++) {
+            for (int j = 0; j < img.cols; j++) {                                     
+            img.at<cv::Vec3b>(i,j) = cv::Vec3b(sockData[ptr+ 0],sockData[ptr+1],sockData[ptr+2]);
+            ptr=ptr+3;
+            }
+        }
+
+        //imshow("Grey Filter", img);
+
+        cv::waitKey(0);
 
 
     } while(true);
+
+    
 
     //	Close the socket
     close(sock);
