@@ -6,9 +6,16 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+
+
+
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
  
  
 using namespace std;
+using namespace cv;
  
 int main()
 {
@@ -58,13 +65,51 @@ int main()
  
     // While loop: accept and echo message back to client
     char buf[4096];
+
+
  
     while (true)
     {
         memset(buf, 0, 4096);
+
+
+
+
  
         // Wait for client to send data
-        int bytesReceived = recv(clientSocket, buf, 4096, 0);
+        //int bytesReceived = recv(clientSocket, buf, 4096, 0);
+
+
+        Mat  img = Mat::zeros( 480,481, CV_8UC3);
+        int  imgSize = img.total()*img.elemSize();
+        uchar sockData[imgSize];
+        int bytes = 0;
+
+        //Receive data here
+
+        for (int i = 0; i < imgSize; i += bytes) {
+            if ((bytes = recv(clientSocket, sockData +i, imgSize  - i, 0)) == -1)  {
+                break;
+            }
+        }
+
+        // Assign pixel value to img
+        int ptr=0;
+        for (int i = 0;  i < img.rows; i++) {
+            for (int j = 0; j < img.cols; j++) {                                     
+            img.at<cv::Vec3b>(i,j) = cv::Vec3b(sockData[ptr+ 0],sockData[ptr+1],sockData[ptr+2]);
+            ptr=ptr+3;
+            }
+        }
+
+        imshow("test",img);
+
+        waitKey(0);
+
+
+
+
+        /*
         if (bytesReceived == -1)
         {
             cerr << "Error in recv(). Quitting" << endl;
@@ -75,12 +120,15 @@ int main()
         {
             cout << "Client disconnected " << endl;
             break;
-        }
+        }*/
+        
  
-        cout << string(buf, 0, bytesReceived) << endl;
+        //cout << string(buf, 0, bytesReceived) << endl;
+
+        cout << "prueba" << endl;
  
         // Echo message back to client
-        send(clientSocket, buf, bytesReceived + 1, 0);
+        //send(clientSocket, buf, bytesReceived + 1, 0);
     }
  
     // Close the socket

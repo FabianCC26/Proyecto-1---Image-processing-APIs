@@ -7,10 +7,20 @@
 #include <string.h>
 #include <string>
 
+
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
+
 using namespace std;
+using namespace cv;
 
 int main()
+
 {
+
+
+
     //	Create a socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
@@ -39,20 +49,44 @@ int main()
     string userInput;
 
 
+    
+
     do {
         //		Enter lines of text
+
+
         cout << "> ";
         getline(cin, userInput);
 
         //		Send to server
-        int sendRes = send(sock, userInput.c_str(), userInput.size() + 1, 0);
+
+
+
+
+        Mat frame = imread("./Cat.jpg",IMREAD_COLOR);
+
+        int  imgSize = frame.total()*frame.elemSize();
+
+       
+
+        //imshow("test",frame);
+
+        //waitKey(0);
+
+
+        // Send data here
+        int sendRes = send(sock, frame.data, imgSize, 0);
+
+
+
         if (sendRes == -1)
         {
             cout << "Could not send to server! Whoops!\r\n";
             continue;
         }
 
-        //		Wait for response
+
+        /*//		Wait for response
         memset(buf, 0, 4096);
         int bytesReceived = recv(sock, buf, 4096, 0);
         if (bytesReceived == -1)
@@ -63,7 +97,9 @@ int main()
         {
             //		Display response
             cout << "SERVER> " << string(buf, bytesReceived) << "\r\n";
-        }
+        }*/
+
+
     } while(true);
 
     //	Close the socket
