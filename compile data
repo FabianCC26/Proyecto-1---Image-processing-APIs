@@ -1,0 +1,9 @@
+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
+
+
+
+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
+
+
+g++ main.cpp -o app `pkg-config --cflags --libs opencv4`
+
